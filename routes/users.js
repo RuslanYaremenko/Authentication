@@ -4,6 +4,7 @@ const multer = require('multer')
 const upload = multer({
   dest: './uploads'
 })
+const User = require('../models/user')
 
 /* GET users listing. */
 router.get('/', (req, res, next) => {
@@ -28,10 +29,10 @@ router.post('/register', upload.single('profileimage'), (req, res, next) => {
 
   if (req.file) {
     console.log('Uploading file...')
-    const profileimage = req.file.filename
+    var profileimage = req.file.filename
   } else {
     console.log('No file uploaded...')
-    const profileimage = 'noimage.jpg'
+    var profileimage = 'noimage.jpg'
   }
 
   //Form Validator
@@ -50,7 +51,23 @@ router.post('/register', upload.single('profileimage'), (req, res, next) => {
       errors: errors
     })
   } else {
-    console.log('No Errors')
+    var newUser = new User({
+      name: name,
+      email: email,
+      username: username,
+      password: password,
+      profileimage: profileimage
+    })
+
+    User.createUser(newUser, (err, user) => {
+      if (err) {
+        throw err
+      }
+      console.log(user)
+    })
+    req.flash('success', 'You are now registered and can login')
+    res.location('/')
+    res.redirect('/')
   }
 });
 
