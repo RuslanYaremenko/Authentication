@@ -5,6 +5,8 @@ const upload = multer({
   dest: './uploads'
 })
 const User = require('../models/user')
+const passport = require('passport')
+const LocalStrategy = require('passport-local').Strategy
 
 /* GET users listing. */
 router.get('/', (req, res, next) => {
@@ -20,6 +22,48 @@ router.get('/login', (req, res, next) => {
     title: 'Login'
   });
 });
+router.post('/login',
+  passport.authenticate('local', {
+    failureRedirect: '/users/login',
+    failureFlash: 'Invalid username or password'
+  }),
+  (req, res) => {
+    req.flash('success', 'You are now logged in')
+    res.redirect('/');
+  })
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((id, done) => {
+  User.getUserById(id, (err, user) => {
+    done(err, user);
+  });
+});
+
+passport.use(new LocalStrategy((username, password, done) => {
+  User.getUserByUsername(username, (err, user) => {
+    if (err) throw err;
+    if (!user) {
+      return done(null, false, {
+        message: 'Unknown User'
+      })
+    }
+
+    User.comparePassword(password, user.password, (err, isMatch) => {
+      if (err) return done(err);
+      if (isMatch) {
+        return done(null, user)
+      } else {
+        done(null, false, {
+          message: 'Invalid Password'
+        })
+      }
+    })
+  })
+}))
+
 router.post('/register', upload.single('profileimage'), (req, res, next) => {
   const name = req.body.name
   const email = req.body.email
