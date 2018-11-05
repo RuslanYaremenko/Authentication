@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
 
 mongoose.connect('mongodb://localhost/nodeauth')
 
@@ -26,5 +27,10 @@ const UserSchema = mongoose.Schema({
 
 const User = module.exports = mongoose.model('User', UserSchema)
 module.exports.createUser = (newUser, cb) => {
-    newUser.save(cb)
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newUser.password, salt, (err, hash) => {
+            newUser.password = hash
+            newUser.save(cb)
+        });
+    });
 }
